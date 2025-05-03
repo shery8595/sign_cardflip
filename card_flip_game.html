@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIGN Card Flip Game</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Bubblegum+Sans&display=swap');
+        
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: linear-gradient(to bottom, #ff8c00, #ff9900, #ffa500, #ffcc00);
+            min-height: 100vh;
+            font-family: 'Bubblegum Sans', cursive;
+            transition: background 0.5s ease;
+        }
+        
+        body.dark-mode {
+            background: linear-gradient(to bottom, #1a1a1a, #2d2d2d, #3d3d3d, #4a4a4a);
+        }
+        
+        canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+        
+        .dark-mode-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 50px;
+            color: white;
+            font-family: 'Bubblegum Sans', cursive;
+            font-size: 1rem;
+            cursor: pointer;
+            z-index: 100;
+            backdrop-filter: blur(5px);
+            transition: all 0.3s ease;
+        }
+        
+        .dark-mode-toggle:hover {
+            transform: scale(1.05);
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        .dark-mode .dark-mode-toggle {
+            background: rgba(0, 0, 0, 0.3);
+        }
+        
+        .dark-mode .dark-mode-toggle:hover {
+            background: rgba(0, 0, 0, 0.4);
+        }
+        
+        .game-container {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .title {
+            font-size: 4rem;
+            margin: 0 0 30px 0;
+            color: white;
+            text-shadow: 3px 3px 0 #FF6B00,
+                        6px 6px 0 #FFD700,
+                        9px 9px 0 rgba(255, 255, 255, 0.5);
+            letter-spacing: 2px;
+            transform: rotate(-2deg);
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        .dark-mode .title {
+            text-shadow: 3px 3px 0 #4a4a4a,
+                        6px 6px 0 #666666,
+                        9px 9px 0 rgba(255, 255, 255, 0.3);
+        }
+        
+        .difficulty-screen {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 30px;
+            border-radius: 20px;
+            backdrop-filter: blur(5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            transition: all 0.5s ease;
+        }
+        
+        .dark-mode .difficulty-screen {
+            background: rgba(0, 0, 0, 0.3);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+        }
+        
+        .difficulty-title {
+            font-size: 2rem;
+            color: white;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 0 #FF6B00;
+        }
+        
+        .dark-mode .difficulty-title {
+            text-shadow: 2px 2px 0 #4a4a4a;
+        }
+        
+        .difficulty-btn {
+            background: linear-gradient(135deg, #ffcc00, #ff9900);
+            border: none;
+            padding: 15px 30px;
+            margin: 10px;
+            border-radius: 50px;
+            font-family: 'Bubblegum Sans', cursive;
+            font-size: 1.2rem;
+            color: white;
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        .dark-mode .difficulty-btn {
+            background: linear-gradient(135deg, #4a4a4a, #666666);
+        }
+        
+        .difficulty-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        }
+        
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            perspective: 1000px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .card {
+            width: 150px;
+            height: 200px;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s;
+            cursor: pointer;
+        }
+        
+        .card.flipped {
+            transform: rotateY(180deg);
+        }
+        
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        .card-front {
+            background: linear-gradient(135deg, #ffcc00, #ff9900);
+            transform: rotateY(180deg);
+            overflow: hidden;
+        }
+        
+        .card-front img {
+            width: 80%;
+            height: 80%;
+            object-fit: contain;
+        }
+        
+        .dark-mode .card-front {
+            background: linear-gradient(135deg, #4a4a4a, #666666);
+        }
+        
+        .card-back {
+            background: linear-gradient(135deg, #ff9900, #ff8c00);
+        }
+        
+        .dark-mode .card-back {
+            background: linear-gradient(135deg, #666666, #4a4a4a);
+        }
+        
+        .game-info {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .score, .timer {
+            font-size: 1.5rem;
+            color: white;
+            text-shadow: 2px 2px 0 #FF6B00;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 10px 20px;
+            border-radius: 50px;
+            backdrop-filter: blur(5px);
+            transition: all 0.5s ease;
+        }
+        
+        .dark-mode .score, .dark-mode .timer {
+            background: rgba(0, 0, 0, 0.3);
+            text-shadow: 2px 2px 0 #4a4a4a;
+        }
+        
+        .game-over {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.2);
+            padding: 30px;
+            border-radius: 20px;
+            backdrop-filter: blur(5px);
+            text-align: center;
+            z-index: 100;
+            display: none;
+            transition: all 0.5s ease;
+        }
+        
+        .game-over.show {
+            display: block;
+        }
+        
+        .dark-mode .game-over {
+            background: rgba(0, 0, 0, 0.3);
+        }
+        
+        .game-over h2 {
+            color: white;
+            font-size: 2rem;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 0 #FF6B00;
+        }
+        
+        .dark-mode .game-over h2 {
+            text-shadow: 2px 2px 0 #4a4a4a;
+        }
+        
+        .restart-btn {
+            background: linear-gradient(135deg, #ffcc00, #ff9900);
+            border: none;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-family: 'Bubblegum Sans', cursive;
+            font-size: 1.2rem;
+            color: white;
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        .dark-mode .restart-btn {
+            background: linear-gradient(135deg, #4a4a4a, #666666);
+        }
+        
+        .restart-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(-2deg); }
+            50% { transform: translateY(-10px) rotate(-2deg); }
+        }
+    </style>
+</head>
+<body>
+    <button class="dark-mode-toggle" id="darkModeToggle">🌙 Dark Mode</button>
+    <canvas id="cloudCanvas"></canvas>
+    <div class="game-container">
+        <h1 class="title">SIGN</h1>
+        <div class="difficulty-screen" id="difficultyScreen">
+            <h2 class="difficulty-title">Select Difficulty</h2>
+            <button class="difficulty-btn" data-time="45">Easy (45 seconds)</button>
+            <button class="difficulty-btn" data-time="30">Medium (30 seconds)</button>
+            <button class="difficulty-btn" data-time="15">Hard (15 seconds)</button>
+        </div>
+        <div class="game-info" id="gameInfo" style="display: none;">
+            <div class="score">Moves: <span id="moves">0</span></div>
+            <div class="timer">Time: <span id="timer">00:00</span></div>
+        </div>
+        <div class="game-board" id="gameBoard"></div>
+        <div class="game-over" id="gameOver">
+            <h2>Time's Up!</h2>
+            <p>You made <span id="finalMoves">0</span> moves</p>
+            <button class="restart-btn" onclick="showDifficultyScreen()">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        // Dark mode toggle
+        const darkModeToggle = document.getElementById('darkModeToggle');
+        const body = document.body;
+        
+        // Check for saved dark mode preference
+        if (localStorage.getItem('darkMode') === 'true') {
+            body.classList.add('dark-mode');
+            darkModeToggle.textContent = '☀️ Light Mode';
+        }
+        
+        darkModeToggle.addEventListener('click', () => {
+            body.classList.toggle('dark-mode');
+            const isDarkMode = body.classList.contains('dark-mode');
+            darkModeToggle.textContent = isDarkMode ? '☀️ Light Mode' : '🌙 Dark Mode';
+            localStorage.setItem('darkMode', isDarkMode);
+        });
+        
+        // Cloud animation code
+        const canvas = document.getElementById('cloudCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        
+        // Load cloud images
+        const cloudImages = [];
+        const cloudImagePromises = [];
+        
+        for (let i = 1; i <= 3; i++) {
+            const img = new Image();
+            cloudImages.push(img);
+            cloudImagePromises.push(new Promise((resolve) => {
+                img.onload = resolve;
+                img.src = `images/cloud${i}.png`;
+            }));
+        }
+        
+        class Cloud {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 100 + 100;
+                this.speed = Math.random() * 0.5 + 0.2;
+                this.opacity = Math.random() * 0.3 + 0.1;
+                this.imageIndex = Math.floor(Math.random() * cloudImages.length);
+            }
+            
+            update() {
+                this.x += this.speed;
+                if (this.x > canvas.width + this.size) {
+                    this.x = -this.size;
+                    this.y = Math.random() * canvas.height;
+                }
+            }
+            
+            draw() {
+                const img = cloudImages[this.imageIndex];
+                ctx.globalAlpha = this.opacity;
+                ctx.drawImage(img, this.x, this.y, this.size, this.size * (img.height / img.width));
+                ctx.globalAlpha = 1;
+            }
+        }
+        
+        let clouds = [];
+        
+        function initClouds() {
+            clouds = Array(10).fill().map(() => new Cloud());
+        }
+        
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            clouds.forEach(cloud => {
+                cloud.update();
+                cloud.draw();
+            });
+            requestAnimationFrame(animate);
+        }
+        
+        // Wait for all cloud images to load before starting animation
+        Promise.all(cloudImagePromises).then(() => {
+            initClouds();
+            animate();
+        });
+        
+        // Game logic
+        const images = [
+            'images/Big_Gids.jpg',
+            'images/dragon.png',
+            'images/Tajudeen.jpg',
+            'images/thoth.jpg',
+            'images/xin_yan.jpg',
+            'images/zoe_chan.jpg',
+            'images/badge.png',
+            'images/glasses.png'
+        ];
+        const cards = [...images, ...images];
+        let flippedCards = [];
+        let moves = 0;
+        let matchedPairs = 0;
+        let timeLeft = 0;
+        let timerInterval;
+        
+        function formatTime(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = seconds % 60;
+            return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+        }
+        
+        function startTimer(seconds) {
+            timeLeft = seconds;
+            document.getElementById('timer').textContent = formatTime(timeLeft);
+            
+            if (timerInterval) clearInterval(timerInterval);
+            
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                document.getElementById('timer').textContent = formatTime(timeLeft);
+                
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    endGame();
+                }
+            }, 1000);
+        }
+        
+        function endGame() {
+            document.getElementById('gameOver').style.display = 'block';
+            document.getElementById('finalMoves').textContent = moves;
+        }
+        
+        function showDifficultyScreen() {
+            document.getElementById('difficultyScreen').style.display = 'block';
+            document.getElementById('gameInfo').style.display = 'none';
+            document.getElementById('gameBoard').innerHTML = '';
+            document.getElementById('gameOver').style.display = 'none';
+            moves = 0;
+            matchedPairs = 0;
+        }
+        
+        function startGame(seconds) {
+            document.getElementById('difficultyScreen').style.display = 'none';
+            document.getElementById('gameInfo').style.display = 'flex';
+            document.getElementById('gameOver').style.display = 'none';
+            moves = 0;
+            matchedPairs = 0;
+            document.getElementById('moves').textContent = '0';
+            startTimer(seconds);
+            initializeGame();
+        }
+        
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+        
+        function createCard(imagePath) {
+            const card = document.createElement('div');
+            card.className = 'card';
+            
+            const cardFront = document.createElement('div');
+            cardFront.className = 'card-front';
+            const img = document.createElement('img');
+            img.src = imagePath;
+            img.alt = 'Card Image';
+            cardFront.appendChild(img);
+            
+            const cardBack = document.createElement('div');
+            cardBack.className = 'card-back';
+            
+            card.appendChild(cardFront);
+            card.appendChild(cardBack);
+            
+            card.addEventListener('click', () => flipCard(card, imagePath));
+            return card;
+        }
+        
+        function flipCard(card, imagePath) {
+            if (flippedCards.length < 2 && !card.classList.contains('flipped') && timeLeft > 0) {
+                card.classList.add('flipped');
+                flippedCards.push({ card, imagePath });
+                
+                if (flippedCards.length === 2) {
+                    moves++;
+                    document.getElementById('moves').textContent = moves;
+                    
+                    if (flippedCards[0].imagePath === flippedCards[1].imagePath) {
+                        matchedPairs++;
+                        flippedCards = [];
+                        
+                        if (matchedPairs === images.length) {
+                            clearInterval(timerInterval);
+                            setTimeout(() => {
+                                alert(`Congratulations! You won in ${moves} moves with ${formatTime(timeLeft)} remaining!`);
+                                showDifficultyScreen();
+                            }, 500);
+                        }
+                    } else {
+                        setTimeout(() => {
+                            flippedCards.forEach(({ card }) => card.classList.remove('flipped'));
+                            flippedCards = [];
+                        }, 1000);
+                    }
+                }
+            }
+        }
+        
+        function initializeGame() {
+            const gameBoard = document.getElementById('gameBoard');
+            gameBoard.innerHTML = '';
+            const shuffledCards = shuffle([...cards]);
+            
+            shuffledCards.forEach(imagePath => {
+                const card = createCard(imagePath);
+                gameBoard.appendChild(card);
+            });
+        }
+        
+        // Add event listeners for difficulty buttons
+        document.querySelectorAll('.difficulty-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                const seconds = parseInt(button.dataset.time);
+                startGame(seconds);
+            });
+        });
+        
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+    </script>
+</body>
+</html> 
